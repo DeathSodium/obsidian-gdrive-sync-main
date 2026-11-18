@@ -81,18 +81,32 @@ export class GoogleAuth {
   ) {}
 
   /** Step 1: kick off device flow, returns the code to show the user. */
-  async requestDeviceCode(): Promise<DeviceCodeResponse> {
-    const res = await requestUrl({
-      url: DEVICE_CODE_URL,
-      method: "POST",
-      contentType: "application/x-www-form-urlencoded",
-      body: new URLSearchParams({
-        client_id: this.clientId,
-        scope: SCOPE,
-      }).toString(),
-    });
-    return res.json;
+  
+async requestDeviceCode(): Promise<DeviceCodeResponse> {
+  const res = await requestUrl({
+    url: DEVICE_CODE_URL,
+    method: "POST",
+    contentType: "application/x-www-form-urlencoded",
+    throw: false,
+    body: new URLSearchParams({
+      client_id: this.clientId,
+      scope: SCOPE,
+    }).toString(),
+  });
+
+  if (res.status !== 200) {
+    const error = res.json?.error ??
+      res.text ??
+      "Unknown Google OAuth error";
+
+    throw new Error(
+      `Device authorization failed (${res.status}): ${error}`
+    );
   }
+
+  return res.json;
+}
+
 
   /** Wakes any pending pollForToken() wait so it checks immediately. */
   wake(): void {
